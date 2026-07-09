@@ -1,0 +1,34 @@
+project_name = "akeyless-gateway"
+
+# Akeyless Gateway TLS material, provided as PEM files. The same
+# certificate/key is imported into ACM in both regions (ACM certs are
+# regional). Paths are read at plan/apply time via file() - keep them
+# outside this repo (they are not committed, but the private key WILL end
+# up in Terraform state in plaintext; use an encrypted, access-restricted
+# backend).
+tls_certificate_path       = "/secure/path/to/akeyless-gateway.crt.pem"
+tls_private_key_path       = "/secure/path/to/akeyless-gateway.key.pem"
+# tls_certificate_chain_path = "/secure/path/to/chain.pem"
+
+# Alternative: skip the two variables above and bring your own already-
+# imported ACM certificate ARNs instead.
+# east_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/xxxx"
+# west_certificate_arn = "arn:aws:acm:us-west-2:123456789012:certificate/yyyy"
+
+# Optional: create a Route 53 alias record pointing this domain at the
+# Global Accelerator. Purely a DNS convenience - the domain must already be
+# covered by the certificate above.
+# domain_name     = "gateway.example.com"
+# route53_zone_id = "Z0123456789ABCDEFGHIJ"
+
+instance_type    = "t3.medium" # free-tier eligible alternative: "t3.micro" (likely undersized for MicroK8s)
+root_volume_size = 20
+
+# Optional: attach an existing EC2 key pair if you want SSH access in addition to SSM.
+# key_name = "my-keypair"
+# allowed_ssh_cidr_blocks = ["203.0.113.4/32"]
+
+tags = {
+  Environment = "dev"
+  Project     = "akeyless-gateway-cross-regions"
+}
