@@ -6,9 +6,13 @@ project_name = "akeyless-gateway"
 # outside this repo (they are not committed, but the private key WILL end
 # up in Terraform state in plaintext; use an encrypted, access-restricted
 # backend).
-tls_certificate_path       = "/secure/path/to/akeyless-gateway.crt.pem"
-tls_private_key_path       = "/secure/path/to/akeyless-gateway.key.pem"
-# tls_certificate_chain_path = "/secure/path/to/chain.pem"
+# tls_certificate_path must be the leaf/end-entity certificate ONLY - a
+# single "BEGIN CERTIFICATE" block. ACM's certificate_body rejects a file
+# containing the chain appended after the leaf cert; intermediates and the
+# root belong in tls_certificate_chain_path instead.
+tls_certificate_path       = "./tls/akeyless-gateway.crt.pem"
+tls_private_key_path       = "./tls/akeyless-gateway.key.pem"
+tls_certificate_chain_path = "./tls/akeyless-gateway.ca.pem"
 
 # Alternative: skip the two variables above and bring your own already-
 # imported ACM certificate ARNs instead.

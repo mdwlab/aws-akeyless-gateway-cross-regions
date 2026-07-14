@@ -37,3 +37,18 @@ override.tf.json
 .terraformrc
 terraform.rc
 
+# Local TLS/SSH key material (private keys, certs, chains) referenced by
+# terraform.tfvars - never commit these.
+/tls/
+/ssh/
+*.pem
+*.key
+
+# Plan files can contain sensitive attribute values (e.g. private_key) in
+# raw form, even though the CLI redacts "sensitive" fields in plan output.
+*.plan
+*.tfplan
+
+# Stray local scratch file (raw PEM certificate)
+/abc
+

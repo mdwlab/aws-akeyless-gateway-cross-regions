@@ -124,6 +124,14 @@ separately into ACM in `us-east-1` and `us-west-2`. This is a plain ACM
 an Amazon-issued/DNS-validated certificate - there's no domain validation
 step to wait on.
 
+**`certificate_body` must be the leaf cert only.** ACM rejects
+`certificate_body` if it contains more than one `BEGIN CERTIFICATE` block -
+so a Let's Encrypt-style fullchain (leaf + intermediate + root concatenated)
+will fail to import. Keep `tls_certificate_path` pointing at just the leaf
+certificate, and put the intermediate/root chain in
+`tls_certificate_chain_path` (`certificate_chain` on the resource) instead -
+that's what `modules/regional-stack/acm.tf` wires up.
+
 **Security note:** the private key ends up in Terraform state in plaintext.
 ACM's "sensitive" flag on that attribute only redacts it from CLI/plan
 output, not from the state file itself. Use a remote backend with encryption
