@@ -7,8 +7,16 @@ set -euxo pipefail
 
 exec > /var/log/microk8s-install.log 2>&1
 
-until [ -f /var/lib/cloud/instance/boot-finished ]; do
-  sleep 2
+# Bounded wait for any concurrent apt/dpkg lock (e.g. unattended-upgrades
+# running at first boot) rather than cloud-init's own completion marker:
+# this script runs as part of cloud-init's final stage (scripts-user, which
+# executes before the final-message module that writes boot-finished), so
+# waiting on cloud-init to finish here would deadlock against itself.
+for i in $(seq 1 60); do
+  if ! fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 && ! fuser /var/lib/apt/lists/lock >/dev/null 2>&1; then
+    break
+  fi
+  sleep 5
 done
 
 apt-get update -y
