@@ -28,6 +28,16 @@ output "west_certificate_arn" {
   value       = module.west.certificate_arn
 }
 
+output "east_target_group_arn" {
+  description = "ALB target group ARN in the east region, for aws elbv2 describe-target-health."
+  value       = module.east.target_group_arn
+}
+
+output "west_target_group_arn" {
+  description = "ALB target group ARN in the west region, for aws elbv2 describe-target-health."
+  value       = module.west.target_group_arn
+}
+
 output "global_accelerator_dns_name" {
   description = "DNS name of the Global Accelerator. Point var.domain_name at this (e.g. via a CNAME/ALIAS record)."
   value       = module.global_accelerator.dns_name
