@@ -8,6 +8,16 @@ output "west_alb_dns_name" {
   value       = module.west.alb_dns_name
 }
 
+output "east_instance_id" {
+  description = "EC2 instance ID in the east region, for aws ssm/ec2 commands."
+  value       = module.east.instance_id
+}
+
+output "west_instance_id" {
+  description = "EC2 instance ID in the west region, for aws ssm/ec2 commands."
+  value       = module.west.instance_id
+}
+
 output "east_instance_public_ip" {
   description = "Public IP of the east region EC2 instance."
   value       = module.east.instance_public_ip

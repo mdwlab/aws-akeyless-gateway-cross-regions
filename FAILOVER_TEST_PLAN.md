@@ -45,20 +45,20 @@ first (Step 0), then induce failure on that region specifically.**
   every `aws globalaccelerator ...` command below needs `--region us-west-2`
   even when you're asking about the east endpoint group.
 - SSM Session Manager access to both instances (already set up, no SSH key
-  needed - see `east_instance_id`/`west_instance_id` from `terraform state`
-  since these aren't currently surfaced as root outputs; see note at the
-  end if you'd rather have them as outputs).
+  needed - IDs available via `terraform output east_instance_id` /
+  `west_instance_id`).
 - The test URL: `https://k8sgw.wz-aws.cs.akeyless.fans` (routes through GA),
   and the two regions' direct ALB DNS names (`terraform output
   east_alb_dns_name` / `west_alb_dns_name`) for bypassing GA to compare
   against.
 
-Look up resource IDs you'll need, once, up front:
+Look up resource IDs you'll need, once, up front (EC2 instance IDs are
+outputs; the rest still come from state):
 
 ```bash
 # EC2 instance IDs
-terraform state show module.east.aws_instance.gateway | grep -E '^\s+id\s'
-terraform state show module.west.aws_instance.gateway | grep -E '^\s+id\s'
+terraform output -raw east_instance_id
+terraform output -raw west_instance_id
 
 # Security group IDs (ALB SG and EC2 SG, per region)
 terraform state show module.east.aws_security_group.alb | grep -E '^\s+id\s'
@@ -76,8 +76,8 @@ terraform state show module.global_accelerator.aws_globalaccelerator_endpoint_gr
 Open two SSM sessions, one per instance:
 
 ```bash
-aws ssm start-session --target <east-instance-id> --region us-east-1
-aws ssm start-session --target <west-instance-id> --region us-west-2
+aws ssm start-session --target "$(terraform output -raw east_instance_id)" --region us-east-1
+aws ssm start-session --target "$(terraform output -raw west_instance_id)" --region us-west-2
 ```
 
 In each session, tail the ingress controller's access log:
@@ -186,9 +186,9 @@ Same as Test 1, but stop the instance instead of touching the security
 group:
 
 ```bash
-aws ec2 stop-instances --instance-ids <west-instance-id> --region us-west-2
+aws ec2 stop-instances --instance-ids "$(terraform output -raw west_instance_id)" --region us-west-2
 # ... observe as in Test 1, steps 3-5 ...
-aws ec2 start-instances --instance-ids <west-instance-id> --region us-west-2
+aws ec2 start-instances --instance-ids "$(terraform output -raw west_instance_id)" --region us-west-2
 ```
 
 Caveat: SSM access to the stopped instance is lost for the duration, so
@@ -232,7 +232,7 @@ network-level timeout, but the same ALB/GA health-check-driven failover
 logic applies either way.
 
 ```bash
-aws ssm start-session --target <west-instance-id> --region us-west-2
+aws ssm start-session --target "$(terraform output -raw west_instance_id)" --region us-west-2
 sudo microk8s stop
 # ... observe as in Test 1, steps 3-5, using the surviving region's log
 #     tail and the client-side probe - see caveat below ...
@@ -278,10 +278,9 @@ Caveats:
 
 ## Optional follow-up
 
-Steps above lean on `terraform state show ... | grep id` for security
-group/instance IDs and endpoint group ARNs since those aren't currently
-exposed as outputs (only `*_target_group_arn` and the ALB/GA outputs are).
-If you'll run this more than once, it's worth adding root outputs for
-`east_instance_id`/`west_instance_id`, the two security group IDs per
-region, and the two GA endpoint group ARNs - say the word and I'll wire
-those up the same way we did for `target_group_arn`.
+Steps above still lean on `terraform state show ... | grep id` for the
+security group IDs and GA endpoint group ARNs, since those aren't exposed
+as outputs yet (`*_instance_id` and `*_target_group_arn` now are). If
+you'll run this more than once, it's worth adding root outputs for the two
+security group IDs per region and the two GA endpoint group ARNs too - say
+the word and I'll wire those up the same way.
